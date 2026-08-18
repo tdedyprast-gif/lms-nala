@@ -25,6 +25,8 @@ services:
       JWT_SECRET: "${JWT_SECRET}"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@lms.id}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-Admin123!}"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      SENDER_EMAIL: "${SENDER_EMAIL:-onboarding@resend.dev}"
     networks:
       - lms-net
 

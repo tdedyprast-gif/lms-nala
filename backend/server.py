@@ -5,6 +5,12 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 import os
+import io
+import csv
+import re
+import asyncio
+import secrets
+import string
 import logging
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -12,7 +18,8 @@ from typing import List, Optional, Literal
 
 import bcrypt
 import jwt
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, status
+import resend
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, status, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -36,6 +43,49 @@ security = HTTPBearer(auto_error=False)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("lms")
+
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+
+
+async def send_email(to: str, subject: str, html: str):
+    if not RESEND_API_KEY:
+        logger.info(f"[EMAIL SKIPPED — RESEND_API_KEY belum diset] to={to} subject={subject}")
+        return
+    params = {"from": SENDER_EMAIL, "to": [to], "subject": subject, "html": html}
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Email sent to {to}: id={result.get('id')}")
+    except Exception as e:
+        logger.error(f"Failed to send email to {to}: {e}")
+
+
+def grade_email_html(student_name: str, module_title: str, course_title: str, score: int, max_score: int, feedback: str, grader_name: str) -> str:
+    feedback_row = (
+        f'<tr><td style="padding:8px 0;color:#666;font-size:14px;">Feedback</td>'
+        f'<td style="padding:8px 0;font-size:14px;">{feedback}</td></tr>'
+    ) if feedback else ""
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;">
+      <tr><td style="background:#1A4D2E;padding:24px;border-radius:8px 8px 0 0;">
+        <h2 style="color:#ffffff;margin:0;font-size:20px;">Tugas Anda Sudah Dinilai ✅</h2>
+      </td></tr>
+      <tr><td style="background:#ffffff;border:1px solid #E5E5E0;border-top:0;padding:24px;border-radius:0 0 8px 8px;">
+        <p style="font-size:14px;color:#333;">Halo <strong>{student_name}</strong>,</p>
+        <p style="font-size:14px;color:#333;">Instruktur telah menilai tugas Anda. Berikut detailnya:</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;width:120px;">Course</td><td style="padding:8px 0;font-size:14px;"><strong>{course_title}</strong></td></tr>
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Modul</td><td style="padding:8px 0;font-size:14px;">{module_title}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Nilai</td><td style="padding:8px 0;"><span style="background:#E86A33;color:#fff;padding:4px 12px;border-radius:20px;font-size:16px;font-weight:bold;">{score} / {max_score}</span></td></tr>
+          {feedback_row}
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Dinilai oleh</td><td style="padding:8px 0;font-size:14px;">{grader_name}</td></tr>
+        </table>
+        <p style="font-size:13px;color:#999;margin-top:24px;">Login ke platform LMS untuk melihat detail lengkap.</p>
+      </td></tr>
+    </table>
+    """
 
 
 # ---------- Utilities ----------
@@ -253,6 +303,100 @@ async def me(user: dict = Depends(get_current_user)):
 
 
 # ---------- Users (Admin) ----------
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def generate_password(length: int = 10) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+@api.post("/users/import-csv")
+async def import_students_csv(
+    file: UploadFile = File(...),
+    course_id: Optional[str] = Form(None),
+    user: dict = Depends(require_roles("admin")),
+):
+    course = None
+    if course_id:
+        course = await db.courses.find_one({"id": course_id})
+        if not course:
+            raise HTTPException(404, "Course not found")
+    raw = await file.read()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1")
+    sample = text[:2048]
+    delimiter = ";" if sample.count(";") > sample.count(",") else ","
+    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+    if not reader.fieldnames:
+        raise HTTPException(400, "File CSV kosong atau tidak valid")
+    fields = {f.strip().lower(): f for f in reader.fieldnames}
+    if "name" not in fields or "email" not in fields:
+        raise HTTPException(400, "CSV harus punya kolom 'name' dan 'email' (kolom 'password' opsional)")
+    created, skipped = [], []
+    seen_emails = set()
+    for i, row in enumerate(reader, start=2):
+        name = (row.get(fields["name"]) or "").strip()
+        email = (row.get(fields["email"]) or "").strip().lower()
+        password = (row.get(fields.get("password", ""), "") or "").strip() if "password" in fields else ""
+        if not name and not email:
+            continue
+        if not name or not email:
+            skipped.append({"row": i, "email": email or "-", "reason": "Nama atau email kosong"})
+            continue
+        if not EMAIL_RE.match(email):
+            skipped.append({"row": i, "email": email, "reason": "Format email tidak valid"})
+            continue
+        if email in seen_emails:
+            skipped.append({"row": i, "email": email, "reason": "Duplikat di dalam file"})
+            continue
+        seen_emails.add(email)
+        if await db.users.find_one({"email": email}):
+            skipped.append({"row": i, "email": email, "reason": "Email sudah terdaftar"})
+            continue
+        if password and len(password) < 6:
+            skipped.append({"row": i, "email": email, "reason": "Password minimal 6 karakter"})
+            continue
+        generated = False
+        if not password:
+            password = generate_password()
+            generated = True
+        user_doc = {
+            "id": new_id(),
+            "email": email,
+            "password_hash": hash_password(password),
+            "name": name,
+            "role": "student",
+            "created_at": now_utc().isoformat(),
+        }
+        await db.users.insert_one(user_doc)
+        enrolled = False
+        if course:
+            await db.enrollments.insert_one({
+                "id": new_id(),
+                "student_id": user_doc["id"],
+                "course_id": course["id"],
+                "program_id": course["program_id"],
+                "enrolled_at": now_utc().isoformat(),
+            })
+            enrolled = True
+        created.append({
+            "name": name,
+            "email": email,
+            "password": password if generated else None,
+            "enrolled": enrolled,
+        })
+    return {
+        "created": created,
+        "skipped": skipped,
+        "created_count": len(created),
+        "skipped_count": len(skipped),
+        "enrolled_course": course.get("title") if course else None,
+    }
+
+
 @api.get("/users")
 async def list_users(role: Optional[str] = None, user: dict = Depends(get_current_user)):
     q = {}
@@ -661,6 +805,19 @@ async def grade_submission(submission_id: str, body: GradeBody, user: dict = Dep
         {"$set": {"score": body.score, "feedback": body.feedback, "graded_at": now_utc().isoformat(),
                   "graded_by": user["id"]}},
     )
+    student = await db.users.find_one({"id": s["student_id"]}, {"_id": 0, "name": 1, "email": 1})
+    module = await db.modules.find_one({"id": s["module_id"]}, {"_id": 0, "title": 1})
+    if student and student.get("email"):
+        html = grade_email_html(
+            student_name=student["name"],
+            module_title=(module or {}).get("title", "Tugas"),
+            course_title=course.get("title", ""),
+            score=body.score,
+            max_score=max_score,
+            feedback=body.feedback or "",
+            grader_name=user["name"],
+        )
+        asyncio.create_task(send_email(student["email"], f"Nilai tugas kamu sudah keluar — {course.get('title', 'LMS')}", html))
     return await db.submissions.find_one({"id": submission_id}, {"_id": 0})
 
 

@@ -34,10 +34,12 @@ Membangun aplikasi LMS course untuk pemberdayaan komunitas dengan Backend NestJS
 - Seeded demo data: 1 program, 1 course (3 modul, 1 assignment), 4 akun test
 - Testing agent: 19/19 backend tests pass, all 4 role frontend flows verified
 
+## Implemented (2026-06)
+- **Email notifikasi nilai (Resend)**: saat instruktur grade submission, backend kirim email HTML ke student (non-blocking via `asyncio.create_task` + `asyncio.to_thread`). Jika `RESEND_API_KEY` kosong → email di-skip dengan log, tanpa error. Konfig: `RESEND_API_KEY` + `SENDER_EMAIL` di backend/.env, .env.example, dan docker-compose.yml. **KEY BELUM DIISI USER** — fitur aktif otomatis begitu key diisi.
+- **Import Student CSV (Admin)**: `POST /api/users/import-csv` (multipart, admin only). Kolom `name,email,password` (password opsional → generate otomatis 10 char). Support delimiter `,`/`;`, BOM, validasi email, dedup dalam file & DB, opsi auto-enroll ke course. Frontend: dialog di halaman Pengguna dengan download template, tabel hasil (password yang digenerate), download hasil CSV, daftar baris dilewati. Tested E2E via curl (login akun hasil import → submit → grade → email pipeline trigger).
+
 ## Prioritized Backlog (P0 → P2)
-- **P1**: Email notifikasi ke student saat submission dinilai (SendGrid/Resend)
 - **P1**: Upload sertifikat completion PDF ketika 100% modul selesai + skor ≥ passing
-- **P2**: Bulk import peserta via CSV (Admin) untuk onboarding cepat cohort baru
 - **P2**: Chat/diskusi per module (Q&A)
 - **P2**: Export laporan capaian program ke PDF/Excel untuk donor
 - **P2**: Multi-bahasa (id/en) toggle
