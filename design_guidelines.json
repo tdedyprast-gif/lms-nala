@@ -1,0 +1,135 @@
+{
+  "theme_strategy": {
+    "default_theme": "light",
+    "description": "Archetype 1: Organic & Earthy. A grounded, trustworthy, and optimistic aesthetic suitable for community empowerment, non-profits, and education. Light theme is prioritized to feel welcoming and accessible."
+  },
+  "colors": {
+    "primary": {
+      "hex": "#1A4D2E",
+      "tailwind": "bg-[#1A4D2E]",
+      "description": "Deep Forest Green for strong brand identity, active states, and primary CTAs."
+    },
+    "secondary": {
+      "hex": "#4F6F52",
+      "tailwind": "bg-[#4F6F52]",
+      "description": "Sage Green for secondary buttons, soft accents, and active navigation highlights."
+    },
+    "background": {
+      "hex": "#F5F5F0",
+      "tailwind": "bg-[#F5F5F0]",
+      "description": "Warm Sand / Bone White base background to replace sterile pure white."
+    },
+    "surface": {
+      "hex": "#FFFFFF",
+      "tailwind": "bg-white",
+      "description": "Pure white for content areas, forms, and tables over the sand background."
+    },
+    "accent": {
+      "hex": "#E86A33",
+      "tailwind": "bg-[#E86A33]",
+      "description": "Terracotta for alerts, highlights, 'Mark as Done' toggles, and North Star metric indicators."
+    },
+    "text_primary": {
+      "hex": "#1A1A1A",
+      "tailwind": "text-[#1A1A1A]",
+      "description": "Tinted charcoal (never pure black) for headings and main body text."
+    },
+    "text_muted": {
+      "hex": "#666666",
+      "tailwind": "text-[#666666]",
+      "description": "Stone grey for secondary text, labels, and table headers."
+    },
+    "border": {
+      "hex": "#E5E5E0",
+      "tailwind": "border-[#E5E5E0]",
+      "description": "Subtle earthy grey for 1px solid structural borders."
+    }
+  },
+  "typography": {
+    "fonts": {
+      "headings": {
+        "family": "Outfit, sans-serif",
+        "weights": ["400", "500", "700"],
+        "description": "Clean, approachable sans-serif for headings (H1-H4). Do not use Inter."
+      },
+      "body": {
+        "family": "Manrope, sans-serif",
+        "weights": ["400", "500", "600"],
+        "description": "Highly readable sans-serif for body text, data tables, and input fields."
+      }
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-bold tracking-tight text-[#1A1A1A]",
+      "h2": "text-2xl sm:text-3xl font-semibold tracking-tight text-[#1A1A1A]",
+      "h3": "text-xl sm:text-2xl font-medium text-[#1A1A1A]",
+      "h4": "text-lg sm:text-xl font-medium text-[#1A1A1A]",
+      "body": "text-base leading-relaxed text-[#1A1A1A]",
+      "small": "text-sm text-[#666666]",
+      "overline": "text-xs font-bold uppercase tracking-[0.2em] text-[#4F6F52]"
+    }
+  },
+  "visual_enhancers": {
+    "surfaces": "Use 'Cardless / Flat' strategy. Do not use heavy box-shadows. Group elements using solid white surfaces on the sand background, enclosed with a delicate 1px border (border-[#E5E5E0]).",
+    "radii": "Subtle roundness. Use rounded-lg (8px) or rounded-xl for main containers, rounded-md for inner elements. Nested radii must follow child <= parent rule.",
+    "spacing": "Generous Spacing. Use p-6, p-8, and p-12 for dashboard sections. Ensure ample breathing room.",
+    "f_pattern_layout": "Position the 'North Star Metric' (e.g., Program Completion % for Donors, Active Cohorts for Instructors) in the top-left quadrant of dashboards."
+  },
+  "components_strategy": {
+    "buttons": "Pill-shaped (rounded-full) or subtle rounded (rounded-md). Always include hover states (e.g., hover:bg-[#11331e] for primary).",
+    "forms": "Use Shadcn UI forms. Left-align labels. Inputs should have a subtle border and focus:ring-2 focus:ring-[#4F6F52] state.",
+    "tables": "Cardless tables. Clean grid borders for data-heavy sections (Instructor grading, Admin mapping). Use 'border-collapse'.",
+    "charts": "Use Recharts (or Shadcn Charts). Donut charts for Donors (part-to-whole impact), line charts for student cohort progress. Use brand colors (Green/Terracotta) for chart lines.",
+    "navigation": "Collapsible left-sidebar for Admin/Instructor/Donor. Top navigation with transparent-to-solid glassmorphism for Student player view."
+  },
+  "layouts": {
+    "login_register": "Split screen layout. Left side: beautiful full-height community education image with bg-black/30 overlay. Right side: Centered authentication form with role selector (Admin, Donor, Instructor, Student).",
+    "dashboards": "Bento Grid protocol. High-density grids (grid-cols-1 md:grid-cols-3 lg:grid-cols-4) with gap-6. Summary metrics span 1 col, main chart spans 2-3 cols, feeds span 1 col / 2 rows.",
+    "course_player": "Two-column layout. Left (70%): Video/Material content + 'Mark as Done' sticky footer. Right (30%): Curriculum module list and Assignment upload form (Google Drive link input)."
+  },
+  "motion": {
+    "transitions": "Use specific properties: transition-colors duration-200, transition-transform. DO NOT use 'transition-all'.",
+    "interactions": "Hover states on all interactive elements. Subtle -translate-y-1 on dashboard stat cards.",
+    "page_load": "Use framer-motion for staggered entrance of dashboard cards and list items."
+  },
+  "accessibility": {
+    "contrast": "Ensure text over brand colors meets APCA standards. Use white text on Deep Forest Green.",
+    "testing": "All interactive elements must include data-testid (e.g., data-testid='student-submit-assignment').",
+    "forms": "Clear error states with high-contrast text and borders."
+  },
+  "media": {
+    "icons": "Use lucide-react for UI icons (standard sizing, 2px stroke).",
+    "image_urls": {
+      "login_hero": {
+        "url": "https://images.pexels.com/photos/35552523/pexels-photo-35552523.jpeg",
+        "description": "Women empowerment / community education session. Use as the main login side-panel background."
+      },
+      "donor_dashboard_banner": {
+        "url": "https://images.pexels.com/photos/15119089/pexels-photo-15119089.jpeg",
+        "description": "Children learning in rural classroom. Use as an inspiring banner in the Donor dashboard."
+      },
+      "admin_programs_header": {
+        "url": "https://images.unsplash.com/photo-1542810634-71277d95dcbb",
+        "description": "Group of children sitting on ground. Good for program mapping visual contexts."
+      },
+      "course_thumbnails": [
+        "https://images.unsplash.com/photo-1758270705290-62b6294dd044",
+        "https://images.unsplash.com/photo-1516321497487-e288fb19713f",
+        "https://images.pexels.com/photos/5905486/pexels-photo-5905486.jpeg"
+      ],
+      "instructor_profile": {
+        "url": "https://images.unsplash.com/photo-1509062522246-3755977927d7",
+        "description": "Teacher presenting in classroom. Default avatar/cover for instructors."
+      }
+    }
+  },
+  "universal_guidelines_for_main_agent": [
+    "You MUST NOT apply universal transition (e.g., transition: all). Add transitions for specific properties.",
+    "You MUST NOT center align the app container in App.css.",
+    "Use modern pill-shaped or rounded-md buttons with distinct hover states.",
+    "NEVER use placeholder text or dummyimage URLs. Use the provided image URLs.",
+    "Use 2-3x more padding than usual (e.g., p-8 or p-12 for sections) to avoid a cramped look.",
+    "Implement Sonner for toast notifications.",
+    "Ensure all routing and role-based redirects are visually smooth."
+  ],
+  "instructions_to_main_agent": "Implement a 4-role LMS (Admin, Donor, Instructor, Student) using React and Tailwind. Follow the color palette exactly. Start by building the shared Layout (Sidebar + Header), then the Role Selection Login, then implement the individual dashboards (Admin mapping, Donor Recharts dashboard, Instructor curriculum builder, Student course player with Google Drive submission). Keep UI flat, avoid heavy shadows, rely on 1px borders for structure."
+}

@@ -1,0 +1,105 @@
+/* LMS Pemberdayaan – Global styles */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+.App {
+  min-height: 100vh;
+  background: #F5F5F0;
+  color: #1A1A1A;
+  font-family: 'Manrope', system-ui, sans-serif;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E0;
+  border-radius: 12px;
+}
+
+.btn {
+  transition: background-color 200ms ease, transform 150ms ease;
+  border-radius: 9999px;
+  padding: 0.6rem 1.25rem;
+  font-weight: 600;
+}
+
+.btn-primary { background: #1A4D2E; color: white; }
+.btn-primary:hover { background: #11331e; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-secondary { background: #4F6F52; color: white; }
+.btn-secondary:hover { background: #3d5940; }
+
+.btn-accent { background: #E86A33; color: white; }
+.btn-accent:hover { background: #c95720; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #E5E5E0;
+  color: #1A1A1A;
+}
+.btn-outline:hover { background: #F5F5F0; }
+
+.input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #E5E5E0;
+  border-radius: 8px;
+  background: #fff;
+  font-family: 'Manrope', sans-serif;
+  color: #1A1A1A;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.input:focus {
+  outline: none;
+  border-color: #4F6F52;
+  box-shadow: 0 0 0 2px rgba(79, 111, 82, 0.15);
+}
+
+.label {
+  font-size: 0.8rem;
+  color: #666666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #F5F5F0;
+  color: #4F6F52;
+  border: 1px solid #E5E5E0;
+}
+
+.chip-accent { background: #FFF3EC; color: #E86A33; border-color: #F6D6C4; }
+.chip-primary { background: #E9F1EC; color: #1A4D2E; border-color: #CFE0D4; }
+
+.link { color: #1A4D2E; text-decoration: underline; }
+.link:hover { color: #E86A33; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th, .table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #E5E5E0;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.table th {
+  color: #666666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+}
+.table tbody tr:hover { background: #FAFAF6; }
