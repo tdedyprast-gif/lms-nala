@@ -11,6 +11,7 @@ import re
 import asyncio
 import secrets
 import string
+import random
 import logging
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -138,6 +139,14 @@ class RegisterBody(BaseModel):
     password: str = Field(min_length=6)
     name: str = Field(min_length=1)
     role: Role
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    name: str = Field(min_length=1)
+    role: Role
+    password: Optional[str] = None
+    course_id: Optional[str] = None
 
 
 class LoginBody(BaseModel):
@@ -394,6 +403,54 @@ async def import_students_csv(
         "created_count": len(created),
         "skipped_count": len(skipped),
         "enrolled_course": course.get("title") if course else None,
+    }
+
+
+@api.post("/users")
+async def create_user(body: UserCreate, user: dict = Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Hanya admin yang dapat membuat user")
+
+    email = body.email.lower().strip()
+    if await db.users.find_one({"email": email}):
+        raise HTTPException(status_code=400, detail="Email sudah terdaftar")
+
+    generated = False
+    password = body.password
+    if not password:
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+        generated = True
+
+    user_doc = {
+        "id": new_id(),
+        "email": email,
+        "password_hash": hash_password(password),
+        "name": body.name.strip(),
+        "role": body.role.value,
+        "created_at": now_utc().isoformat(),
+    }
+    await db.users.insert_one(user_doc)
+
+    enrolled_course = None
+    if body.course_id and body.role in (Role.student, Role.instructor):
+        course = await db.courses.find_one({"id": body.course_id})
+        if course:
+            await db.enrollments.insert_one({
+                "id": new_id(),
+                "user_id": user_doc["id"],
+                "course_id": course["id"],
+                "program_id": course["program_id"],
+                "enrolled_at": now_utc().isoformat(),
+            })
+            enrolled_course = course["title"]
+
+    return {
+        "id": user_doc["id"],
+        "email": email,
+        "name": user_doc["name"],
+        "role": user_doc["role"],
+        "password": password if generated else None,
+        "enrolled_course": enrolled_course
     }
 
 

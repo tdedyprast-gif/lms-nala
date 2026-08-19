@@ -3,7 +3,111 @@ import Shell from '../components/Shell';
 import { api, formatApiError } from '../lib/api';
 import { ROLE_LABEL } from '../lib/constants';
 import { toast } from 'sonner';
-import { Upload, Download, X, FileText } from 'lucide-react';
+import { Upload, Download, X, FileText, Plus } from 'lucide-react';
+
+function AddUserDialog({ onClose, onAdded }) {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', role: 'student', password: '', course_id: '' });
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    api.get('/courses').then((r) => setCourses(r.data));
+  }, []);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email) {
+      toast.error('Nama dan Email wajib diisi');
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = { ...form };
+      if (!payload.course_id || (payload.role !== 'student' && payload.role !== 'instructor')) {
+        delete payload.course_id;
+      }
+      const r = await api.post('/users', payload);
+      setResult(r.data);
+      toast.success('Pengguna berhasil ditambahkan');
+      onAdded();
+    } catch (err) { toast.error(formatApiError(err)); }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="add-user-dialog">
+      <div className="card p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto bg-white">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold">Tambah Pengguna</h3>
+          <button onClick={onClose} className="text-[#666] hover:text-black"><X size={20} /></button>
+        </div>
+
+        {!result ? (
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <label className="label">Nama Lengkap *</label>
+              <input type="text" className="input mt-1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </div>
+            <div>
+              <label className="label">Email *</label>
+              <input type="email" className="input mt-1" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            </div>
+            <div>
+              <label className="label">Role *</label>
+              <select className="input mt-1" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} required>
+                <option value="student">Student</option>
+                <option value="instructor">Instructor</option>
+                <option value="admin">Admin</option>
+                <option value="donor">Donor</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Password (Opsional)</label>
+              <input type="text" className="input mt-1" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Kosongkan untuk auto-generate" />
+            </div>
+            {(form.role === 'student' || form.role === 'instructor') && (
+              <div>
+                <label className="label">Langsung enroll ke course (Opsional)</label>
+                <select className="input mt-1" value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })}>
+                  <option value="">— Tanpa enroll —</option>
+                  {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="flex gap-3 pt-2">
+              <button disabled={loading} className="btn btn-primary">
+                {loading ? 'Menyimpan...' : 'Simpan'}
+              </button>
+              <button type="button" onClick={onClose} className="btn btn-outline">Batal</button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-[#EAF3ED] p-4 rounded-lg">
+              <p className="text-center font-bold text-lg text-[#1A4D2E] mb-2">Akun Berhasil Dibuat!</p>
+              <div className="space-y-2 text-sm">
+                <p><strong>Nama:</strong> {result.name}</p>
+                <p><strong>Email:</strong> {result.email}</p>
+                <p><strong>Role:</strong> {ROLE_LABEL[result.role]}</p>
+                <p>
+                  <strong>Password:</strong> <span className="font-mono bg-white px-2 py-1 rounded border">{result.password || '(ditentukan manual)'}</span>
+                </p>
+                {result.enrolled_course && (
+                  <p><strong>Enrolled to:</strong> {result.enrolled_course}</p>
+                )}
+              </div>
+              {result.password && (
+                <p className="text-xs text-red-600 mt-3 font-medium">⚠️ Harap simpan password ini sekarang, password tidak akan ditampilkan lagi.</p>
+              )}
+            </div>
+            <button onClick={onClose} className="btn btn-primary w-full">Selesai</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ImportDialog({ onClose, onImported }) {
   const [courses, setCourses] = useState([]);
@@ -153,6 +257,7 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [showAddUser, setShowAddUser] = useState(false);
 
   const load = () => {
     const q = filter ? `?role=${filter}` : '';
@@ -167,9 +272,14 @@ export default function Users() {
           <h2 className="text-3xl font-semibold">Pengguna</h2>
           <p className="text-[#666] mt-1">Semua akun terdaftar di platform.</p>
         </div>
-        <button onClick={() => setShowImport(true)} className="btn btn-primary flex items-center gap-2" data-testid="import-csv-btn">
-          <FileText size={16} /> Import CSV Student
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowAddUser(true)} className="btn btn-primary flex items-center gap-2">
+            <Plus size={16} /> Tambah Pengguna
+          </button>
+          <button onClick={() => setShowImport(true)} className="btn btn-outline flex items-center gap-2" data-testid="import-csv-btn">
+            <FileText size={16} /> Import CSV
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -198,6 +308,7 @@ export default function Users() {
       </div>
 
       {showImport && <ImportDialog onClose={() => setShowImport(false)} onImported={load} />}
+      {showAddUser && <AddUserDialog onClose={() => setShowAddUser(false)} onAdded={load} />}
     </Shell>
   );
 }
