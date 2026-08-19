@@ -34,10 +34,10 @@ export default function Login() {
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 h-full flex flex-col justify-end p-12 text-white">
-          <p className="text-sm uppercase tracking-widest opacity-80">LMS Pemberdayaan</p>
+          <p className="text-sm uppercase tracking-widest opacity-80">Circlo</p>
           <h1 className="text-4xl font-bold mt-3 max-w-md">Belajar, bertumbuh, memberdayakan.</h1>
           <p className="mt-4 max-w-md opacity-90">
-            Platform pembelajaran berbasis program donor untuk sasaran komunitas nyata.
+            Platform pembelajaran komunitas.
           </p>
         </div>
       </div>
@@ -79,7 +79,7 @@ export default function Login() {
           <p className="text-sm mt-6 text-[#666]">
             Belum punya akun?{' '}
             <Link to="/register" className="link" data-testid="login-to-register">
-              Daftar sebagai {ROLE_LABEL.student}/{ROLE_LABEL.instructor}/{ROLE_LABEL.donor}
+              Daftar sebagai {ROLE_LABEL.student}
             </Link>
           </p>
 
