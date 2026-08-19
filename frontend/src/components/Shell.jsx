@@ -40,7 +40,7 @@ export default function Shell({ children }) {
     <div className="min-h-screen flex bg-[#F5F5F0]">
       <aside className="hidden md:flex md:flex-col w-64 border-r border-[#E5E5E0] bg-white p-6" data-testid="sidebar">
         <div className="mb-10">
-          <p className="label text-[#4F6F52]">LMS Pemberdayaan</p>
+          <p className="label text-[#4F6F52]">Circlo</p>
           <h1 className="text-xl font-bold mt-1">EmpowerLearn</h1>
         </div>
         <nav className="flex-1 space-y-1">
@@ -52,8 +52,7 @@ export default function Shell({ children }) {
                 to={it.to}
                 data-testid={`nav-${it.to.replace('/', '') || 'dashboard'}`}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    isActive ? 'bg-[#E9F1EC] text-[#1A4D2E]' : 'text-[#1A1A1A] hover:bg-[#F5F5F0]'
+                  `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-200 ${isActive ? 'bg-[#E9F1EC] text-[#1A4D2E]' : 'text-[#1A1A1A] hover:bg-[#F5F5F0]'
                   }`
                 }
               >
