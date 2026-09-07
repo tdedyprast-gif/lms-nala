@@ -2,12 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Tambahkan dependensi sistem agar library seperti cryptography & bcrypt berhasil dikompilasi
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
     libssl-dev \
     jq \
+    libjq-dev \
     curl && \
     rm -rf /var/lib/apt/lists/*
 
