@@ -4,6 +4,7 @@ import { api, formatApiError } from '../lib/api';
 import { ROLE_LABEL } from '../lib/constants';
 import { toast } from 'sonner';
 import { Upload, Download, X, FileText, Plus } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 
 function AddUserDialog({ onClose, onAdded }) {
   const [courses, setCourses] = useState([]);
@@ -139,7 +140,7 @@ function ImportDialog({ onClose, onImported }) {
 
   const downloadResults = () => {
     const rows = [['name', 'email', 'password', 'enrolled'],
-      ...result.created.map((c) => [c.name, c.email, c.password || '(dari CSV)', c.enrolled ? 'ya' : 'tidak'])];
+    ...result.created.map((c) => [c.name, c.email, c.password || '(dari CSV)', c.enrolled ? 'ya' : 'tidak'])];
     const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const a = document.createElement('a');
@@ -253,11 +254,104 @@ function ImportDialog({ onClose, onImported }) {
   );
 }
 
+function EditUserDialog({ user, onClose, onUpdated }) {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: user.name || '',
+    email: user.email || '',
+    role: user.role || 'student',
+    password: '', // kosong = tidak diubah
+    course_id: user.course_id || '',
+  });
+
+  useEffect(() => {
+    api.get('/courses').then((r) => setCourses(r.data));
+  }, []);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email) {
+      toast.error('Nama dan Email wajib diisi');
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = { ...form };
+      if (!payload.password) delete payload.password; // hanya kirim jika diisi
+      if (!payload.course_id) delete payload.course_id;
+      await api.put(`/users/${user.id}`, payload);
+      toast.success('Pengguna berhasil diperbarui');
+      onUpdated();
+      onClose();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="card p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto bg-white">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold">Edit Pengguna</h3>
+          <button onClick={onClose} className="text-[#666] hover:text-black"><X size={20} /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="label">Nama Lengkap *</label>
+            <input type="text" className="input mt-1" value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          </div>
+          <div>
+            <label className="label">Email *</label>
+            <input type="email" className="input mt-1" value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+          </div>
+          <div>
+            <label className="label">Role *</label>
+            <select className="input mt-1" value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}>
+              <option value="student">Student</option>
+              <option value="instructor">Instructor</option>
+              <option value="admin">Admin</option>
+              <option value="donor">Donor</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Password Baru (Opsional)</label>
+            <input type="text" className="input mt-1" value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="Kosongkan jika tidak ingin mengubah" />
+          </div>
+          {(form.role === 'student' || form.role === 'instructor') && (
+            <div>
+              <label className="label">Enroll ke course (Opsional)</label>
+              <select className="input mt-1" value={form.course_id}
+                onChange={(e) => setForm({ ...form, course_id: e.target.value })}>
+                <option value="">— Tanpa enroll —</option>
+                {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button disabled={loading} className="btn btn-primary">
+              {loading ? 'Menyimpan...' : 'Update'}
+            </button>
+            <button type="button" onClick={onClose} className="btn btn-outline">Batal</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
+  const [editUser, setEditUser] = useState(null);
 
   const load = () => {
     const q = filter ? `?role=${filter}` : '';
@@ -293,7 +387,7 @@ export default function Users() {
 
       <div className="card overflow-x-auto">
         <table className="table">
-          <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Tanggal Dibuat</th></tr></thead>
+          <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Tanggal Dibuat</th><th>Aksi</th></tr></thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
@@ -301,12 +395,23 @@ export default function Users() {
                 <td>{u.email}</td>
                 <td><span className="chip chip-primary">{ROLE_LABEL[u.role]}</span></td>
                 <td>{new Date(u.created_at).toLocaleDateString('id-ID')}</td>
+                <td>
+                  <button onClick={() => setEditUser(u)} className="btn btn-outline btn-sm">
+                    <Pencil size={16} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
+      {editUser && (
+        <EditUserDialog
+          user={editUser}
+          onClose={() => setEditUser(null)}
+          onUpdated={load}
+        />
+      )}
       {showImport && <ImportDialog onClose={() => setShowImport(false)} onImported={load} />}
       {showAddUser && <AddUserDialog onClose={() => setShowAddUser(false)} onAdded={load} />}
     </Shell>
