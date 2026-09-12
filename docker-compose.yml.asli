@@ -1,0 +1,61 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: lms-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: lms_empowerment
+    networks:
+      - lms-circlo
+
+  backend:
+    build: ./backend
+    container_name: lms-backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: "mongodb://mongo:27017"
+      DB_NAME: "lms_empowerment"
+      CORS_ORIGINS: "${FRONTEND_ORIGIN:-http://localhost}"
+      JWT_SECRET: "${JWT_SECRET}"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@lms.id}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-Admin123!}"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      SENDER_EMAIL: "${SENDER_EMAIL:-onboarding@resend.dev}"
+    networks:
+      - lms-circlo
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BACKEND_URL: "${REACT_APP_BACKEND_URL:-http://localhost}"
+    container_name: lms-frontend
+    restart: unless-stopped
+    networks:
+      - lms-circlo
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: lms-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
+    networks:
+      - lms-circlo
+
+networks:
+  lms-circlo:
+
+volumes:
+  mongo_data:

@@ -1,19 +1,48 @@
-# Stage 1: build
+# ═══════════════════════════════════════════════════════════════════
+# STAGE 1: Build React
+# ═══════════════════════════════════════════════════════════════════
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-COPY package.json yarn.lock* ./
-RUN yarn install --frozen-lockfile || yarn install
+# Copy package files dulu (layer cache)
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
+# Copy source & build
 COPY . .
+
 ARG REACT_APP_BACKEND_URL
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
-RUN yarn build
+ENV NODE_ENV=production
+ENV GENERATE_SOURCEMAP=false
 
-# Stage 2: serve
-FROM nginx:1.27-alpine
-COPY --from=builder /app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+RUN npm run build
+
+# Hapus file yang tidak perlu
+RUN find build -name "*.map" -delete
+
+# ═══════════════════════════════════════════════════════════════════
+# STAGE 2: Nginx Unprivileged (non-root)
+# ═══════════════════════════════════════════════════════════════════
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+
+LABEL org.opencontainers.image.title="LMS Frontend"
+LABEL org.opencontainers.image.vendor="Dwijacode"
+
+USER root
+
+# Copy config
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy build artifacts
+COPY --from=builder --chown=nginx:nginx /build/build /usr/share/nginx/html
+
+USER nginx
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+
 CMD ["nginx", "-g", "daemon off;"]
