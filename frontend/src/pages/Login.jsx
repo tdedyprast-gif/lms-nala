@@ -26,19 +26,19 @@ export default function Login() {
 
   return (
     <div className="min-h-screen grid md:grid-cols-2">
-      <div className="relative hidden md:block" data-testid="login-hero">
-        <img
-          src="https://images.pexels.com/photos/35552523/pexels-photo-35552523.jpeg"
-          alt="Community"
+      <div className="relative hidden md:block">
+        <video
+          src="/circlo.mp4"
           className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 h-full flex flex-col justify-end p-12 text-white">
-          <p className="text-sm uppercase tracking-widest opacity-80">Circlo</p>
-          <h1 className="text-4xl font-bold mt-3 max-w-md">Belajar, bertumbuh, memberdayakan.</h1>
-          <p className="mt-4 max-w-md opacity-90">
-            Platform pembelajaran komunitas.
-          </p>
+          <p className="text-sm uppercase tracking-widest opacity-80">Gabung Sekarang</p>
+          <h1 className="text-4xl font-bold mt-3 max-w-md">Setiap peran punya dampak.</h1>
         </div>
       </div>
 
@@ -79,15 +79,10 @@ export default function Login() {
           <p className="text-sm mt-6 text-[#666]">
             Belum punya akun?{' '}
             <Link to="/register" className="link" data-testid="login-to-register">
-              Daftar sebagai {ROLE_LABEL.student}
+              Daftar
             </Link>
           </p>
 
-          <div className="mt-8 p-4 rounded-lg border border-[#E5E5E0] bg-white text-xs text-[#666]">
-            <p className="font-semibold text-[#1A1A1A] mb-1">Akun Demo Admin</p>
-            <p>Email: <span className="font-mono">admin@lms.id</span></p>
-            <p>Password: <span className="font-mono">Admin123!</span></p>
-          </div>
         </form>
       </div>
     </div>

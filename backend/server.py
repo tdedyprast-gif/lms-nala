@@ -426,13 +426,13 @@ async def create_user(body: UserCreate, user: dict = Depends(get_current_user)):
         "email": email,
         "password_hash": hash_password(password),
         "name": body.name.strip(),
-        "role": body.role.value,
+        "role": body.role,
         "created_at": now_utc().isoformat(),
     }
     await db.users.insert_one(user_doc)
 
     enrolled_course = None
-    if body.course_id and body.role in (Role.student, Role.instructor):
+    if body.course_id and body.role in ("student", "instructor"):
         course = await db.courses.find_one({"id": body.course_id})
         if course:
             await db.enrollments.insert_one({
@@ -966,22 +966,30 @@ async def on_startup():
     await db.progress.create_index([("enrollment_id", 1), ("module_id", 1)], unique=True)
     await db.submissions.create_index([("module_id", 1), ("student_id", 1)], unique=True)
 
-    # Seed admin
+
+    # Seed admin — IDEMPOTENT & aman multi-worker
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@lms.id").lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
-    existing = await db.users.find_one({"email": admin_email})
-    if not existing:
-        await db.users.insert_one({
+
+    await db.users.update_one(
+        {"email": admin_email},
+        {"$setOnInsert": {
             "id": new_id(),
             "email": admin_email,
             "password_hash": hash_password(admin_password),
             "name": "Super Admin",
             "role": "admin",
             "created_at": now_utc().isoformat(),
-        })
-        logger.info(f"Seeded admin: {admin_email}")
-    elif not verify_password(admin_password, existing["password_hash"]):
-        await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
+        }},
+        upsert=True,
+    )
+
+    existing = await db.users.find_one({"email": admin_email})
+    if existing and not verify_password(admin_password, existing["password_hash"]):
+        await db.users.update_one(
+            {"email": admin_email},
+            {"$set": {"password_hash": hash_password(admin_password)}},
+        )
         logger.info(f"Updated admin password: {admin_email}")
 
 

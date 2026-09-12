@@ -31,10 +31,13 @@ export default function Register() {
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="relative hidden md:block">
-        <img
-          src="https://images.pexels.com/photos/15119089/pexels-photo-15119089.jpeg"
-          alt="Learning"
+        <video
+          src="/circlo.mp4"
           className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 h-full flex flex-col justify-end p-12 text-white">
@@ -52,9 +55,8 @@ export default function Register() {
             {ROLES.map((r) => (
               <label
                 key={r.value}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
-                  form.role === r.value ? 'border-[#1A4D2E] bg-white' : 'border-[#E5E5E0] bg-white/60'
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${form.role === r.value ? 'border-[#1A4D2E] bg-white' : 'border-[#E5E5E0] bg-white/60'
+                  }`}
                 data-testid={`register-role-${r.value}`}
               >
                 <input
