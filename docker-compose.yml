@@ -106,7 +106,7 @@ services:
         - |
           import urllib.request, sys
           try:
-              urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)
+              urllib.request.urlopen('http://localhost:8003/api/health', timeout=3)
           except Exception as e:
               sys.exit(1)
       interval: 30s
