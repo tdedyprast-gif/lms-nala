@@ -6,8 +6,9 @@ FROM node:20-alpine AS builder
 WORKDIR /build
 
 # Copy package files dulu (layer cache)
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+COPY package*.json ./
+
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy source & build
 COPY . .
@@ -43,6 +44,6 @@ USER nginx
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

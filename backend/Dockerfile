@@ -57,7 +57,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     || exit 1
 
 # Jalankan dengan gunicorn/uvicorn
-CMD ["uvicorn", "main:app", \
+CMD ["uvicorn", "server:app", \
     "--host", "0.0.0.0", \
     "--port", "8003", \
     "--workers", "1", \

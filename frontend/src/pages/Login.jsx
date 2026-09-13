@@ -28,7 +28,7 @@ export default function Login() {
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="relative hidden md:block">
         <video
-          src="/circlo.mp4"
+          src="/assets/circlo.mp4"
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay
           loop
