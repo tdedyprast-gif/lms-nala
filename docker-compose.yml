@@ -32,7 +32,7 @@ services:
       test:
         - CMD-SHELL
         - >
-          mongo --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
+          mongo --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"      
       interval: 30s
       timeout: 10s
       retries: 5
@@ -61,6 +61,8 @@ services:
         BUILDKIT_INLINE_CACHE: 1
     image: lms-circlo-backend:${IMAGE_TAG:-latest}
     container_name: lms-circlo-backend
+    ports:
+      - "127.0.0.1:8003:8003"
     restart: unless-stopped
     depends_on:
       mongo:
@@ -134,6 +136,8 @@ services:
         REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL}
     image: lms-circlo-frontend:${IMAGE_TAG:-latest}
     container_name: lms-circlo-frontend
+    ports:
+      - "127.0.0.1:8080:8080"
     restart: unless-stopped
     networks:
       - lms-circlo-internal
