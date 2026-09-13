@@ -171,60 +171,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ═══════════════════════════════════════════════════════════════
-  # NGINX — Edge Reverse Proxy (public-facing)
-  # ═══════════════════════════════════════════════════════════════
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: lms-circlo-nginx
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_healthy
-    ports:
-      # Bind ke localhost — asumsi ada Cloudflare Tunnel / Traefik di host
-      # Jika tidak ada, ganti ke "0.0.0.0:443:443" dan aktifkan ufw
-      - "127.0.0.1:80:80"
-      - "127.0.0.1:443:443"
-    volumes:
-      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./deploy/nginx/proxy_params.conf:/etc/nginx/conf.d/proxy_params.conf:ro
-      - ./deploy/certs:/etc/nginx/certs:ro
-      - nginx_cache:/var/cache/nginx
-    networks:
-      - lms-circlo-public
-      - lms-circlo-internal
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:size=16M
-      - /var/run:size=8M
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETUID
-      - SETGID
-      - NET_BIND_SERVICE
-    healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health" ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
 # ═══════════════════════════════════════════════════════════════
 # NETWORKS
 # ═══════════════════════════════════════════════════════════════
