@@ -1,6 +1,6 @@
 # docker-compose.yml
 # ═══════════════════════════════════════════════════════════════════
-# LMS Empowerment — Production Stack
+# lms-circlo Empowerment — Production Stack
 # Security Level: Enterprise
 # ═══════════════════════════════════════════════════════════════════
 
@@ -10,14 +10,14 @@ services:
   # ═══════════════════════════════════════════════════════════════
   mongo:
     image: mongo:4.4
-    container_name: lms-mongo
+    container_name: lms-circlo-mongo
     restart: unless-stopped
     command: >
       mongod --auth --bind_ip_all --wiredTigerCacheSizeGB 0.25 --noscripting
     environment:
       MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_root_user
       MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
-      MONGO_INITDB_DATABASE: ${DB_NAME:-lms_empowerment}
+      MONGO_INITDB_DATABASE: ${DB_NAME:-lms-circlo_empowerment}
     secrets:
       - mongo_root_user
       - mongo_root_password
@@ -25,14 +25,14 @@ services:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
     networks:
-      - lms-internal
+      - lms-circlo-internal
     security_opt:
       - no-new-privileges:true
     healthcheck:
       test:
         - CMD-SHELL
         - >
-          mongosh --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
+          mongo --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
       interval: 30s
       timeout: 10s
       retries: 5
@@ -59,8 +59,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILDKIT_INLINE_CACHE: 1
-    image: lms-backend:${IMAGE_TAG:-latest}
-    container_name: lms-backend
+    image: lms-circlo-backend:${IMAGE_TAG:-latest}
+    container_name: lms-circlo-backend
     restart: unless-stopped
     depends_on:
       mongo:
@@ -74,7 +74,7 @@ services:
         exec uvicorn server:app --host 0.0.0.0 --port 8003 --workers 1 --proxy-headers --forwarded-allow-ips "*" --no-server-header
       '
     environment:
-      DB_NAME: ${DB_NAME:-lms_empowerment}
+      DB_NAME: ${DB_NAME:-lms-circlo_empowerment}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       CORS_ORIGINS: ${FRONTEND_ORIGIN}
       SENDER_EMAIL: ${SENDER_EMAIL}
@@ -88,8 +88,8 @@ services:
       - admin_password
       - resend_api_key
     networks:
-      - lms-internal
-      - lms-public
+      - lms-circlo-internal
+      - lms-circlo-public
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -132,11 +132,11 @@ services:
       dockerfile: Dockerfile
       args:
         REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL}
-    image: lms-frontend:${IMAGE_TAG:-latest}
-    container_name: lms-frontend
+    image: lms-circlo-frontend:${IMAGE_TAG:-latest}
+    container_name: lms-circlo-frontend
     restart: unless-stopped
     networks:
-      - lms-internal
+      - lms-circlo-internal
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -172,7 +172,7 @@ services:
   # ═══════════════════════════════════════════════════════════════
   nginx:
     image: nginx:1.27-alpine
-    container_name: lms-nginx
+    container_name: lms-circlo-nginx
     restart: unless-stopped
     depends_on:
       backend:
@@ -191,8 +191,8 @@ services:
       - ./deploy/certs:/etc/nginx/certs:ro
       - nginx_cache:/var/cache/nginx
     networks:
-      - lms-public
-      - lms-internal
+      - lms-circlo-public
+      - lms-circlo-internal
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -225,10 +225,10 @@ services:
 # NETWORKS
 # ═══════════════════════════════════════════════════════════════
 networks:
-  lms-public:
+  lms-circlo-public:
     driver: bridge
     internal: false
-  lms-internal:
+  lms-circlo-internal:
     driver: bridge
     internal: true
 
