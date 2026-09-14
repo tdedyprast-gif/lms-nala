@@ -24,26 +24,22 @@ RUN npm run build
 RUN find build -name "*.map" -delete
 
 # ═══════════════════════════════════════════════════════════════════
-# STAGE 2: Nginx Unprivileged (non-root)
+# STAGE 2: Nginx Standar (bukan unprivileged)
 # ═══════════════════════════════════════════════════════════════════
 FROM nginx:1.27-alpine AS runtime
 
 LABEL org.opencontainers.image.title="LMS Frontend"
-LABEL org.opencontainers.image.vendor="Circlo by Dwijacode"
-
-USER root
+LABEL org.opencontainers.image.vendor="Dwijacode"
 
 # Copy config
-COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy build artifacts
-COPY --from=builder --chown=nginx:nginx /build/build /usr/share/nginx/html
+COPY --from=builder /build/build /usr/share/nginx/html
 
-USER nginx
-
-EXPOSE 8080
+EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/health || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
