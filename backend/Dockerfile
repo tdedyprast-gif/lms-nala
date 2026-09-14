@@ -23,7 +23,7 @@ FROM python:3.12-slim AS runtime
 # Metadata
 LABEL org.opencontainers.image.title="LMS Backend"
 LABEL org.opencontainers.image.description="LMS Empowerment API"
-LABEL org.opencontainers.image.vendor="Dwijacode"
+LABEL org.opencontainers.image.vendor="Circlo by Dwijacode"
 
 # Environment
 ENV PYTHONUNBUFFERED=1 \
@@ -48,7 +48,7 @@ COPY --chown=app:app . .
 # Switch ke non-root
 USER app
 
-EXPOSE 8003
+EXPOSE 80
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
