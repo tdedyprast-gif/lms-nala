@@ -24,15 +24,14 @@ services:
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
-    networks:
-      - lms-circlo-internal
+    # networks DIHAPUS — pakai default bridge
     security_opt:
       - no-new-privileges:true
     healthcheck:
       test:
         - CMD-SHELL
         - >
-          mongo --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"      
+          mongo --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
       interval: 30s
       timeout: 10s
       retries: 5
@@ -51,7 +50,7 @@ services:
         max-file: "3"
 
   # ═══════════════════════════════════════════════════════════════
-  # BACKEND — FastAPI (public + internal)
+  # BACKEND — FastAPI
   # ═══════════════════════════════════════════════════════════════
   backend:
     build:
@@ -83,15 +82,12 @@ services:
       ENVIRONMENT: production
       PYTHONUNBUFFERED: "1"
       PYTHONDONTWRITEBYTECODE: "1"
-      # hapus semua *_FILE karena sudah di-handle di entrypoint
     secrets:
       - mongo_url
       - jwt_secret
       - admin_password
       - resend_api_key
-    networks:
-      - lms-circlo-internal
-      - lms-circlo-public
+    # networks DIHAPUS — pakai default bridge
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -125,8 +121,9 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
   # ═══════════════════════════════════════════════════════════════
-  # FRONTEND — React static (internal)
+  # FRONTEND — React static
   # ═══════════════════════════════════════════════════════════════
   frontend:
     build:
@@ -139,8 +136,7 @@ services:
     ports:
       - "127.0.0.1:3002:80"
     restart: unless-stopped
-    networks:
-      - lms-circlo-internal
+    # networks DIHAPUS — pakai default bridge
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health" ]
       interval: 30s
@@ -158,15 +154,15 @@ services:
         max-file: "3"
 
 # ═══════════════════════════════════════════════════════════════
-# NETWORKS
+# NETWORKS — DIHAPUS (pakai default bridge)
 # ═══════════════════════════════════════════════════════════════
-networks:
-  lms-circlo-public:
-    driver: bridge
-    internal: false
-  lms-circlo-internal:
-    driver: bridge
-    internal: true
+# networks:
+#   lms-circlo-public:
+#     driver: bridge
+#     internal: false
+#   lms-circlo-internal:
+#     driver: bridge
+#     internal: true
 
 # ═══════════════════════════════════════════════════════════════
 # VOLUMES
@@ -177,7 +173,7 @@ volumes:
   nginx_cache:
 
     # ═══════════════════════════════════════════════════════════════
-    # SECRETS (Enterprise-grade)
+    # SECRETS
     # ═══════════════════════════════════════════════════════════════
 secrets:
   mongo_root_user:
