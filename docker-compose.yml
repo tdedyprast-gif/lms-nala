@@ -137,12 +137,12 @@ services:
     image: lms-circlo-frontend:${IMAGE_TAG:-latest}
     container_name: lms-circlo-frontend
     ports:
-      - "127.0.0.1:3002:8080"
+      - "127.0.0.1:3002:80"
     restart: unless-stopped
     networks:
       - lms-circlo-internal
     healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health" ]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
