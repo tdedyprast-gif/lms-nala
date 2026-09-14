@@ -26,10 +26,10 @@ RUN find build -name "*.map" -delete
 # ═══════════════════════════════════════════════════════════════════
 # STAGE 2: Nginx Unprivileged (non-root)
 # ═══════════════════════════════════════════════════════════════════
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+FROM nginx:1.27-alpine AS runtime
 
 LABEL org.opencontainers.image.title="LMS Frontend"
-LABEL org.opencontainers.image.vendor="Dwijacode"
+LABEL org.opencontainers.image.vendor="Circlo by Dwijacode"
 
 USER root
 
