@@ -233,9 +233,12 @@ class GradeBody(BaseModel):
     score: int
     feedback: str = ""
 
-# Tambahkan ini di bawah bagian Model untuk menampung request data role baru
-class UserUpdateRole(BaseModel):
-    role: Role
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[Role] = None
+    password: Optional[str] = None
+    course_id: Optional[str] = None
 
 
 # ---------- Auth Dependency ----------
@@ -468,6 +471,54 @@ async def list_users(role: Optional[str] = None, user: dict = Depends(get_curren
         raise HTTPException(status_code=403, detail="Forbidden")
     docs = await db.users.find(q, {"_id": 0, "password_hash": 0}).to_list(1000)
     return docs
+
+
+@api.put("/users/{user_id}")
+async def update_user(user_id: str, body: UserUpdate, user: dict = Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Hanya admin yang dapat mengedit user")
+
+    existing = await db.users.find_one({"id": user_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+
+    update_data = {}
+    if body.name is not None:
+        update_data["name"] = body.name.strip()
+    if body.email is not None:
+        email = body.email.lower().strip()
+        # Cek duplikat email jika email berubah
+        if email != existing.get("email"):
+            if await db.users.find_one({"email": email}):
+                raise HTTPException(status_code=400, detail="Email sudah digunakan user lain")
+        update_data["email"] = email
+    if body.role is not None:
+        update_data["role"] = body.role
+    if body.password is not None and body.password != "":
+        update_data["password_hash"] = hash_password(body.password)
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Tidak ada data yang diubah")
+
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+
+    # Handle course enrollment jika course_id dikirim
+    if body.course_id:
+        course = await db.courses.find_one({"id": body.course_id})
+        if course:
+            # Cek apakah sudah ter-enroll
+            enrolled = await db.enrollments.find_one({"user_id": user_id, "course_id": body.course_id})
+            if not enrolled:
+                await db.enrollments.insert_one({
+                    "id": new_id(),
+                    "user_id": user_id,
+                    "course_id": course["id"],
+                    "program_id": course["program_id"],
+                    "enrolled_at": now_utc().isoformat(),
+                })
+
+    updated = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return updated
 
 
 # ---------- Programs (Admin manages, Donor read own) ----------
@@ -945,10 +996,6 @@ async def admin_stats(user: dict = Depends(require_roles("admin"))):
 async def root():
     return {"service": "LMS Pemberdayaan", "status": "ok", "time": now_utc().isoformat()}
 
-
-# Tambahkan ini di bawah bagian Model untuk menampung request data role baru
-class UserUpdateRole(BaseModel):
-    role: Role
 
 # ---------- App Wire-up ----------
 app.include_router(api)
