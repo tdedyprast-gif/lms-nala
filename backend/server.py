@@ -233,6 +233,10 @@ class GradeBody(BaseModel):
     score: int
     feedback: str = ""
 
+# Tambahkan ini di bawah bagian Model untuk menampung request data role baru
+class UserUpdateRole(BaseModel):
+    role: Role
+
 
 # ---------- Auth Dependency ----------
 async def get_current_user(
@@ -941,6 +945,10 @@ async def admin_stats(user: dict = Depends(require_roles("admin"))):
 async def root():
     return {"service": "LMS Pemberdayaan", "status": "ok", "time": now_utc().isoformat()}
 
+
+# Tambahkan ini di bawah bagian Model untuk menampung request data role baru
+class UserUpdateRole(BaseModel):
+    role: Role
 
 # ---------- App Wire-up ----------
 app.include_router(api)
