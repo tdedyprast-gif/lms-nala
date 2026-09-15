@@ -6,32 +6,28 @@
 
 services:
   # ═══════════════════════════════════════════════════════════════
-  # MONGO — Database (internal only)
+  # POSTGRES — Database (internal only)
   # ═══════════════════════════════════════════════════════════════
-  mongo:
-    image: mongo:4.4
-    container_name: lms-circlo-mongo
+  postgres:
+    image: postgres:16-alpine
+    container_name: lms-circlo-postgres
     restart: unless-stopped
-    command: >
-      mongod --auth --bind_ip_all --wiredTigerCacheSizeGB 0.25 --noscripting
     environment:
-      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_root_user
-      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
-      MONGO_INITDB_DATABASE: ${DB_NAME:-lms-circlo_empowerment}
+      POSTGRES_USER_FILE: /run/secrets/mongo_root_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/mongo_root_password
+      POSTGRES_DB: ${DB_NAME:-lms-circlo_empowerment}
     secrets:
       - mongo_root_user
       - mongo_root_password
     volumes:
-      - mongo_data:/data/db
-      - mongo_config:/data/configdb
+      - postgres_data:/var/lib/postgresql/data
     # networks DIHAPUS — pakai default bridge
     security_opt:
       - no-new-privileges:true
     healthcheck:
       test:
         - CMD-SHELL
-        - >
-          mongo --quiet --username "$$(cat /run/secrets/mongo_root_user)" --password "$$(cat /run/secrets/mongo_root_password)" --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
+        - pg_isready -U "$$(cat /run/secrets/mongo_root_user)" -d "${DB_NAME:-lms-circlo_empowerment}"
       interval: 30s
       timeout: 10s
       retries: 5
@@ -64,7 +60,7 @@ services:
       - "127.0.0.1:8003:8003"
     restart: unless-stopped
     depends_on:
-      mongo:
+      postgres:
         condition: service_healthy
     entrypoint: >
       sh -c '
@@ -168,8 +164,7 @@ services:
 # VOLUMES
 # ═══════════════════════════════════════════════════════════════
 volumes:
-  mongo_data:
-  mongo_config:
+  postgres_data:
   nginx_cache:
 
     # ═══════════════════════════════════════════════════════════════
