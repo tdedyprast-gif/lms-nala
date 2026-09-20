@@ -22,6 +22,8 @@ import jwt
 import resend
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, status, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
@@ -995,6 +997,50 @@ async def admin_stats(user: dict = Depends(require_roles("admin"))):
 @api.get("/")
 async def root():
     return {"service": "LMS Pemberdayaan", "status": "ok", "time": now_utc().isoformat()}
+
+
+# ---------- Thumbnail Upload ----------
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+@api.post("/upload/thumbnail")
+async def upload_thumbnail(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    if user["role"] not in ("admin", "instructor"):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    # Validasi ekstensi
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Format file tidak didukung. Gunakan: {', '.join(ALLOWED_EXTENSIONS)}")
+
+    # Baca file dan validasi ukuran
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Ukuran file maksimal 5 MB")
+
+    # Generate nama unik
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = UPLOAD_DIR / filename
+    filepath.write_bytes(content)
+
+    return {"url": f"/api/uploads/{filename}"}
+
+
+@api.get("/uploads/{filename}")
+async def serve_upload(filename: str):
+    # Sanitasi: hanya izinkan nama file sederhana
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    filepath = UPLOAD_DIR / filename
+    if not filepath.is_file():
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    return FileResponse(filepath)
 
 
 # ---------- App Wire-up ----------
