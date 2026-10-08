@@ -4,78 +4,218 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { BookOpen } from 'lucide-react';
 
-export default function Landing() {
-  const [courses, setCourses] = useState([]);
-  const [programs, setPrograms] = useState([]);
-  const [instructors, setInstructors] = useState([]);
-  const nav = useNavigate();
-  const { user } = useAuth();
+const ALUR = [
+  { icon: '📝', judul: 'Daftar Akun', teks: 'Buat akun Anda untuk mulai menggunakan LMS.' },
+  { icon: '🔍', judul: 'Pilih Course', teks: 'Jelajahi berbagai materi kursus yang tersedia.' },
+  { icon: '📚', judul: 'Mulai Belajar', teks: 'Akses materi, kerjakan tugas, dan kembangkan diri Anda.' },
+  { icon: '🎓', judul: 'Capai Target', teks: 'Selesaikan kursus dan tingkatkan keahlian Anda.' },
+];
 
-  const load = async () => {
-    try {
-      const [c, p] = await Promise.all([api.get('/courses'), api.get('/programs')]);
-      setCourses(c.data); setPrograms(p.data);
-      if (user?.role === 'admin') {
-        const u = await api.get('/users?role=instructor');
-        setInstructors(u.data);
-      }
-    } catch (e) {
-      console.error(e);
-      setCourses([
+export default function Landing() {
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/courses')
+      .then(r => setCourses(r.data || []))
+      .catch(() => {
+        // Fallback mock data if API requires auth or fails
+        setCourses([
           { id: 1, title: "Pengenalan LMS", description: "Pelajari cara menggunakan LMS untuk proses belajar mengajar.", module_count: 5, instructor_name: "Admin" },
           { id: 2, title: "Dasar Pemrograman", description: "Materi pengenalan logika dasar dan bahasa pemrograman.", module_count: 12, instructor_name: "Instruktur" }
-      ]);
+        ]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const aksesCourse = (id) => {
+    if (user) {
+      // sudah login → arahkan ke dashboard atau courses
+      nav('/dashboard');
+      return;
     }
+    nav('/login');
   };
-  useEffect(() => { load(); }, [user]);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0]">
-      <header className="bg-white border-b border-[#E5E5E0] py-4 px-8 flex justify-between items-center sticky top-0 z-50">
-        <h1 className="text-2xl font-bold text-[#1A4D2E] flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#1A4D2E] rounded-full flex items-center justify-center text-white text-sm">C</div>
-            Circlo
-        </h1>
-        <div className="flex gap-4">
-          <Link to="/login" className="btn bg-transparent text-[#1A4D2E] hover:bg-gray-100 px-4 py-2 rounded-lg font-medium">Masuk</Link>
-          <Link to="/register" className="btn bg-[#1A4D2E] text-white hover:bg-[#143B23] px-4 py-2 rounded-lg font-medium">Daftar</Link>
+    <div className="min-h-screen bg-slate-50" data-testid="landing-page">
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#1A4D2E] rounded-full flex items-center justify-center text-white text-sm font-bold">C</div>
+            <div>
+              <div className="font-extrabold text-[#1A4D2E] leading-tight">Circlo</div>
+              <div className="text-[11px] text-slate-500 leading-tight">LMS Platform</div>
+            </div>
+          </Link>
+
+          <nav className="flex items-center gap-2">
+            <a href="#courses" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1A4D2E]">
+              Materi Kursus
+            </a>
+            <a href="#alur" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1A4D2E]">
+              Cara Belajar
+            </a>
+            {user ? (
+              <Link to="/dashboard" className="btn btn-primary bg-[#1A4D2E] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#143B23] transition-colors" data-testid="landing-dashboard">
+                Buka Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/register" className="btn px-4 py-2 text-sm text-[#1A4D2E] border border-[#1A4D2E] rounded-lg hover:bg-slate-50 transition-colors" data-testid="landing-daftar-top">
+                  Daftar
+                </Link>
+                <Link to="/login" className="btn bg-[#1A4D2E] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#143B23] transition-colors" data-testid="landing-login">
+                  Masuk
+                </Link>
+              </>
+            )}
+          </nav>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8 py-20">
-        <div className="text-center mb-20 max-w-3xl mx-auto">
-          <h2 className="text-5xl font-extrabold text-[#111] mb-6 leading-tight">Mulai Perjalanan <span className="text-[#1A4D2E]">Belajarmu</span> Bersama Kami</h2>
-          <p className="text-xl text-[#666] leading-relaxed">Platform pembelajaran terpadu untuk meningkatkan keahlian dan mencapai potensi terbaikmu.</p>
+      {/* ── Hero ── */}
+      <section className="bg-gradient-to-br from-[#1A4D2E]/10 via-white to-slate-100 border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 text-center">
+          <span className="px-3 py-1 rounded-full bg-[#1A4D2E]/10 text-[#1A4D2E] text-sm font-medium">Platform Edukasi</span>
+          <h1 className="text-3xl md:text-5xl font-extrabold mt-4 text-slate-800">
+            Mulai Perjalanan Belajarmu,<br className="hidden md:block" /> Bersama Kami
+          </h1>
+          <p className="text-slate-600 mt-4 max-w-2xl mx-auto">
+            Jelajahi berbagai materi kursus, kerjakan tugas, dan tingkatkan keahlian Anda
+            melalui platform pembelajaran terpadu.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center mt-8">
+            <a href="#courses" className="bg-[#1A4D2E] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#143B23] transition-colors" data-testid="hero-lihat-courses">
+              Lihat Materi Kursus
+            </a>
+            {!user && (
+              <Link to="/login" className="border border-[#1A4D2E] text-[#1A4D2E] px-6 py-3 rounded-lg font-medium hover:bg-slate-50 transition-colors" data-testid="hero-login">
+                Mulai Belajar
+              </Link>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-12">
+            <div>
+              <div className="text-2xl font-extrabold text-[#1A4D2E]">{courses.length}</div>
+              <div className="text-xs text-slate-500 mt-1">Course Tersedia</div>
+            </div>
+            <div>
+              <div className="text-2xl font-extrabold text-[#1A4D2E]">
+                {courses.reduce((s, c) => s + (c.module_count || 0), 0)}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Modul Pembelajaran</div>
+            </div>
+            <div>
+              <div className="text-2xl font-extrabold text-[#1A4D2E]">100%</div>
+              <div className="text-xs text-slate-500 mt-1">Akses Fleksibel</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Courses ── */}
+      <section id="courses" className="max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-extrabold">Materi Kursus</h2>
+          <p className="text-slate-600 mt-2">Pilih kursus yang Anda minati, lalu klik akses untuk mulai belajar.</p>
         </div>
 
-        <div className="flex items-center justify-between mb-8">
-            <h3 className="text-2xl font-bold text-[#111]">Materi Kursus Tersedia</h3>
-        </div>
+        {loading && <div className="text-center text-slate-500 py-12">Memuat course…</div>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {!loading && courses.length === 0 && (
+          <div className="bg-white rounded-xl border border-slate-200 text-center text-slate-500 py-12">
+            Belum ada materi kursus yang tersedia.
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map(c => (
-            <div key={c.id} className="card overflow-hidden bg-white shadow-sm border border-[#E5E5E0] rounded-2xl transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col h-full">
-              <img src={c.thumbnail || 'https://images.unsplash.com/photo-1758270705290-62b6294dd044'} alt="" className="w-full h-48 object-cover" />
-              <div className="p-6 flex flex-col flex-1">
-                <h4 className="text-xl font-bold text-[#111] leading-snug">{c.title}</h4>
-                <p className="text-sm text-[#666] mt-3 line-clamp-2 flex-1">{c.description}</p>
-                <div className="flex flex-wrap gap-2 mt-5">
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs flex items-center font-medium"><BookOpen size={14} className="mr-1.5" /> {c.module_count} materi</span>
-                  {c.instructor_name && <span className="bg-[#1A4D2E]/10 text-[#1A4D2E] px-3 py-1 rounded-full text-xs font-medium">{c.instructor_name}</span>}
+            <div key={c.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col hover:shadow-lg transition-shadow" data-testid={`course-card-${c.id}`}>
+              <div className="h-44 bg-slate-100 overflow-hidden">
+                <img src={c.thumbnail || 'https://images.unsplash.com/photo-1758270705290-62b6294dd044'} alt={c.title} className="w-full h-full object-cover" />
+              </div>
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-bold text-lg leading-tight">{c.title}</h3>
                 </div>
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <button onClick={() => nav('/login')} className="w-full bg-[#1A4D2E] text-white hover:bg-[#143B23] py-3 rounded-xl font-semibold transition-colors flex items-center justify-center">Akses Course</button>
+                {c.description && <p className="text-sm text-slate-500 mt-2 line-clamp-2">{c.description}</p>}
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs flex items-center font-medium">
+                    <BookOpen size={12} className="mr-1" /> {c.module_count || 0} materi
+                  </span>
+                  {c.instructor_name && (
+                    <span className="bg-[#1A4D2E]/10 text-[#1A4D2E] px-2.5 py-1 rounded-full text-xs font-medium">
+                      {c.instructor_name}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-auto pt-5">
+                  <button
+                    onClick={() => aksesCourse(c.id)}
+                    data-testid={`course-akses-${c.id}`}
+                    className="w-full py-2.5 rounded-xl justify-center bg-[#1A4D2E] text-white font-medium hover:bg-[#143B23] transition-colors"
+                  >
+                    Akses Course
+                  </button>
                 </div>
               </div>
             </div>
           ))}
-          {courses.length === 0 && (
-            <div className="col-span-full bg-white border border-[#E5E5E0] rounded-2xl p-12 text-center text-[#666]">
-              Memuat course...
-            </div>
-          )}
         </div>
-      </main>
+      </section>
+
+      {/* ── Alur ── */}
+      <section id="alur" className="bg-white border-y border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-extrabold">Cara Belajar</h2>
+            <p className="text-slate-600 mt-2">Empat langkah mudah memulai perjalanan belajarmu.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {ALUR.map((s, i) => (
+              <div key={s.judul} className="text-center">
+                <div className="w-14 h-14 rounded-2xl bg-[#1A4D2E]/10 grid place-items-center text-2xl mx-auto">
+                  {s.icon}
+                </div>
+                <div className="text-xs font-bold text-[#1A4D2E] mt-3">LANGKAH {i + 1}</div>
+                <div className="font-bold mt-1">{s.judul}</div>
+                <p className="text-sm text-slate-500 mt-1">{s.teks}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="bg-[#1A4D2E]/5 border border-[#1A4D2E]/20 rounded-2xl text-center py-12">
+          <h2 className="text-xl md:text-2xl font-extrabold">Sudah siap belajar hari ini?</h2>
+          <p className="text-slate-600 mt-2">Daftar sekarang, atau masuk jika Anda sudah punya akun.</p>
+          <div className="flex flex-wrap gap-3 justify-center mt-6">
+            <Link to="/register" className="bg-[#1A4D2E] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#143B23] transition-colors" data-testid="cta-daftar">Daftar Sekarang</Link>
+            <Link to="/login" className="border border-[#1A4D2E] text-[#1A4D2E] px-6 py-3 rounded-lg font-medium hover:bg-white transition-colors" data-testid="cta-login">Masuk</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-sm text-slate-500">
+            © {new Date().getFullYear()} Circlo LMS Platform
+          </div>
+          <div className="flex gap-4 text-sm">
+            <Link to="/register" className="text-slate-600 hover:text-[#1A4D2E]">Daftar</Link>
+            <Link to="/login" className="text-slate-600 hover:text-[#1A4D2E]">Masuk</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
