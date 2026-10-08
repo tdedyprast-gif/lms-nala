@@ -1,34 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { BookOpen } from 'lucide-react';
 
 export default function Landing() {
   const [courses, setCourses] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const nav = useNavigate();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    api.get('/courses').then(res => setCourses(res.data)).catch(e => {
-        console.log("Failed to fetch courses (might require login or backend unavailable):", e);
-        // Fallback mock data if API requires auth or fails
-        setCourses([
-            {
-                id: 1,
-                title: "Pengenalan LMS",
-                description: "Pelajari cara menggunakan LMS untuk proses belajar mengajar secara efektif.",
-                module_count: 5,
-                instructor_name: "Admin"
-            },
-            {
-                id: 2,
-                title: "Dasar Pemrograman",
-                description: "Materi pengenalan logika dasar dan bahasa pemrograman untuk pemula.",
-                module_count: 12,
-                instructor_name: "Instruktur"
-            }
-        ]);
-    });
-  }, []);
+  const load = async () => {
+    try {
+      const [c, p] = await Promise.all([api.get('/courses'), api.get('/programs')]);
+      setCourses(c.data); setPrograms(p.data);
+      if (user?.role === 'admin') {
+        const u = await api.get('/users?role=instructor');
+        setInstructors(u.data);
+      }
+    } catch (e) {
+      console.error(e);
+      setCourses([
+          { id: 1, title: "Pengenalan LMS", description: "Pelajari cara menggunakan LMS untuk proses belajar mengajar.", module_count: 5, instructor_name: "Admin" },
+          { id: 2, title: "Dasar Pemrograman", description: "Materi pengenalan logika dasar dan bahasa pemrograman.", module_count: 12, instructor_name: "Instruktur" }
+      ]);
+    }
+  };
+  useEffect(() => { load(); }, [user]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F0]">
