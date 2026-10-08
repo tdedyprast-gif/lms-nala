@@ -11,23 +11,31 @@ const ALUR = [
   { icon: '🎓', judul: 'Capai Target', teks: 'Selesaikan kursus dan tingkatkan keahlian Anda.' },
 ];
 
+const THUMBS = [
+  'https://images.unsplash.com/photo-1758270705290-62b6294dd044',
+  'https://images.unsplash.com/photo-1516321497487-e288fb19713f',
+  'https://images.pexels.com/photos/5905486/pexels-photo-5905486.jpeg',
+];
+
 export default function Landing() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const load = async () => {
+    try {
+      const c = await api.get('/courses');
+      setCourses(c.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    api.get('/courses')
-      .then(r => setCourses(r.data || []))
-      .catch(() => {
-        // Fallback mock data if API requires auth or fails
-        setCourses([
-          { id: 1, title: "Pengenalan LMS", description: "Pelajari cara menggunakan LMS untuk proses belajar mengajar.", module_count: 5, instructor_name: "Admin" },
-          { id: 2, title: "Dasar Pemrograman", description: "Materi pengenalan logika dasar dan bahasa pemrograman.", module_count: 12, instructor_name: "Instruktur" }
-        ]);
-      })
-      .finally(() => setLoading(false));
+    load();
   }, []);
 
   const aksesCourse = (id) => {
@@ -136,7 +144,7 @@ export default function Landing() {
           {courses.map(c => (
             <div key={c.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col hover:shadow-lg transition-shadow" data-testid={`course-card-${c.id}`}>
               <div className="h-44 bg-slate-100 overflow-hidden">
-                <img src={c.thumbnail || 'https://images.unsplash.com/photo-1758270705290-62b6294dd044'} alt={c.title} className="w-full h-full object-cover" />
+                <img src={c.thumbnail || THUMBS[0]} alt={c.title} className="w-full h-full object-cover" />
               </div>
               <div className="p-5 flex-1 flex flex-col">
                 <div className="flex items-start justify-between gap-2">
