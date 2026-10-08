@@ -71,7 +71,7 @@ export default function Shell({ children }) {
           </div>
           <button
             data-testid="logout-btn"
-            onClick={() => { logout(); nav('/login'); }}
+            onClick={() => { logout(); nav('/landing'); }}
             className="btn btn-outline w-full flex items-center justify-center gap-2 text-sm"
           >
             <LogOut size={16} /> Keluar
