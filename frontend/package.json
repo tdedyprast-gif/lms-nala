@@ -49,8 +49,8 @@
     "react-day-picker": "^10.0.1",
     "react-dom": "19.0.0",
     "react-hook-form": "7.56.2",
-    "react-pageflip": "^2.0.3",
-    "react-pdf": "^11.0.0",
+    "react-pageflip": "2.0.3",
+    "react-pdf": "9.2.1",
     "react-resizable-panels": "3.0.1",
     "react-router-dom": "7.15.0",
     "react-scripts": "5.0.1",
@@ -63,6 +63,7 @@
     "zod": "3.24.4"
   },
   "scripts": {
+    "postinstall": "node scripts/copy-pdf-worker.js",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test"
