@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api';
 import { toast } from 'sonner';
 import { CheckCircle2, Circle, FileText, ExternalLink } from 'lucide-react';
+import PdfFlipbook from '../components/PdfFlipbook';
 
 export default function CoursePlayer() {
   const { id } = useParams();
@@ -88,6 +89,11 @@ export default function CoursePlayer() {
                 {active.content || <span className="text-[#666]">Belum ada konten teks. Silakan cek link/video yang diberikan instruktur.</span>}
               </div>
 
+              {/* PDF Flipbook viewer */}
+              {active.pdf_url && (
+                <PdfFlipbook url={active.pdf_url} title={active.title} />
+              )}
+
               {active.has_assignment && (
                 <div className="mt-8 p-5 border border-[#F6D6C4] bg-[#FFF3EC] rounded-lg">
                   <div className="flex items-center gap-2">
@@ -150,7 +156,10 @@ export default function CoursePlayer() {
                   {d ? <CheckCircle2 size={18} className="text-[#1A4D2E] mt-0.5" /> : <Circle size={18} className="text-[#666] mt-0.5" />}
                   <div className="flex-1">
                     <p className="text-sm font-medium">{m.order}. {m.title}</p>
-                    {m.has_assignment && <span className="chip chip-accent mt-1">Tugas</span>}
+                    <div className="flex gap-1 flex-wrap mt-1">
+                      {m.has_assignment && <span className="chip chip-accent">Tugas</span>}
+                      {m.pdf_url && <span className="chip" style={{background:'#E9F1EC',color:'#1A4D2E'}}><FileText size={10} className="mr-1" />PDF</span>}
+                    </div>
                   </div>
                 </button>
               );

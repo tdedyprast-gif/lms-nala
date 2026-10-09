@@ -11,12 +11,18 @@ export default function CourseManage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    title: '', content: '', order: 1, has_assignment: false,
+    title: '', content: '', pdf_url: '', order: 1, has_assignment: false,
     assignment_title: '', assignment_description: '', max_score: 100,
   });
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const pdfInputRef = React.useRef(null);
 
-  const load = () => api.get(`/courses/${id}`).then((r) => setCourse(r.data));
-  useEffect(() => { load(); }, [id]);
+  const load = useCallback(
+    () => api.get(`/courses/${id}`).then((r) => setCourse(r.data)),
+    [id]
+  );
+
+  useEffect(() => { load(); }, [load]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -25,9 +31,36 @@ export default function CourseManage() {
       if (editing) await api.patch(`/modules/${editing}`, payload);
       else await api.post('/modules', payload);
       setShowForm(false); setEditing(null);
-      setForm({ title: '', content: '', order: 1, has_assignment: false, assignment_title: '', assignment_description: '', max_score: 100 });
+      setForm({ title: '', content: '', pdf_url: '', order: 1, has_assignment: false, assignment_title: '', assignment_description: '', max_score: 100 });
       toast.success('Tersimpan'); load();
     } catch (err) { toast.error(formatApiError(err)); }
+  };
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast.error('File harus berupa PDF');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Maksimal ukuran 10MB');
+      return;
+    }
+    setUploadingPdf(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post('/upload/pdf', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setForm((prev) => ({ ...prev, pdf_url: res.data.url }));
+      toast.success('PDF berhasil diunggah');
+    } catch (err) {
+      toast.error(formatApiError(err));
+    }
+    setUploadingPdf(false);
+    if (pdfInputRef.current) pdfInputRef.current.value = '';
   };
 
   const remove = async (mid) => {
@@ -38,7 +71,7 @@ export default function CourseManage() {
   const startEdit = (m) => {
     setEditing(m.id);
     setForm({
-      title: m.title, content: m.content || '', order: m.order || 1,
+      title: m.title, content: m.content || '', pdf_url: m.pdf_url || '', order: m.order || 1,
       has_assignment: !!m.has_assignment,
       assignment_title: m.assignment_title || '',
       assignment_description: m.assignment_description || '',
@@ -57,7 +90,7 @@ export default function CourseManage() {
           <h2 className="text-3xl font-semibold">{course.title}</h2>
           <p className="text-[#666] mt-1">{course.description}</p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditing(null); setForm({ title: '', content: '', order: (course.modules?.length || 0) + 1, has_assignment: false, assignment_title: '', assignment_description: '', max_score: 100 }); }}
+        <button onClick={() => { setShowForm(true); setEditing(null); setForm({ title: '', content: '', pdf_url: '', order: (course.modules?.length || 0) + 1, has_assignment: false, assignment_title: '', assignment_description: '', max_score: 100 }); }}
           className="btn btn-primary flex items-center gap-2" data-testid="new-module-btn">
           <Plus size={16} /> Materi Baru
         </button>
@@ -76,8 +109,24 @@ export default function CourseManage() {
             </div>
           </div>
           <div>
-            <label className="label">Konten / Materi</label>
-            <textarea rows={5} className="input mt-1" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Isi teks materi atau link video/PDF…" />
+            <label className="label">Konten / Materi (Teks atau URL lain)</label>
+            <textarea rows={5} className="input mt-1" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Isi teks materi atau link video/materi web…" />
+          </div>
+          <div>
+            <label className="label">Upload PDF Materi (opsional)</label>
+            <div className="flex items-center gap-3 mt-1">
+              <input type="file" accept="application/pdf" className="hidden" ref={pdfInputRef} onChange={handlePdfUpload} />
+              <button type="button" onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf} className="btn btn-outline flex items-center gap-2">
+                {uploadingPdf ? 'Mengunggah...' : 'Pilih File PDF'}
+              </button>
+              {form.pdf_url && (
+                <div className="flex items-center gap-2 bg-[#E9F1EC] px-3 py-1.5 rounded-md text-[#1A4D2E] text-sm">
+                  <FileText size={14} /> PDF Terlampir
+                  <button type="button" onClick={() => setForm({ ...form, pdf_url: '' })} className="ml-2 hover:text-red-500">×</button>
+                </div>
+              )}
+            </div>
+            {form.pdf_url && <a href={form.pdf_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 mt-1 block w-max hover:underline">Lihat PDF</a>}
           </div>
 
           <label className="flex items-center gap-2">
@@ -116,6 +165,11 @@ export default function CourseManage() {
             <div className="flex-1">
               <h3 className="font-semibold">{m.title}</h3>
               {m.content && <p className="text-sm text-[#666] mt-1 line-clamp-2">{m.content}</p>}
+              {m.pdf_url && (
+                <div className="mt-2">
+                  <span className="chip bg-[#1A4D2E]/10 text-[#1A4D2E]"><FileText size={12} className="mr-1" /> PDF Terlampir</span>
+                </div>
+              )}
               {m.has_assignment && (
                 <div className="mt-2">
                   <span className="chip chip-accent"><FileText size={12} className="mr-1" /> Tugas: {m.assignment_title || '(tanpa judul)'} · max {m.max_score}</span>

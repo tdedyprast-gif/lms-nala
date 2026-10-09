@@ -200,6 +200,7 @@ class ModuleCreate(BaseModel):
     course_id: str
     title: str
     content: str = ""
+    pdf_url: Optional[str] = None
     order: int = 0
     has_assignment: bool = False
     assignment_title: Optional[str] = None
@@ -210,6 +211,7 @@ class ModuleCreate(BaseModel):
 class ModuleUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
+    pdf_url: Optional[str] = None
     order: Optional[int] = None
     has_assignment: Optional[bool] = None
     assignment_title: Optional[str] = None
@@ -1026,6 +1028,28 @@ async def upload_thumbnail(
 
     # Generate nama unik
     filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = UPLOAD_DIR / filename
+    filepath.write_bytes(content)
+
+    return {"url": f"/api/uploads/{filename}"}
+
+@api.post("/upload/pdf")
+async def upload_pdf(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    if user["role"] not in ("admin", "instructor"):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext != ".pdf":
+        raise HTTPException(status_code=400, detail="Format file harus PDF.")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10 MB limit for PDF
+        raise HTTPException(status_code=400, detail="Ukuran PDF maksimal 10 MB")
+
+    filename = f"{uuid.uuid4().hex}.pdf"
     filepath = UPLOAD_DIR / filename
     filepath.write_bytes(content)
 
