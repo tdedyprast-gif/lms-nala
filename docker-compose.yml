@@ -94,18 +94,10 @@ services:
     cap_add:
       - NET_BIND_SERVICE
     healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - |
-          import urllib.request, sys
-          try:
-              urllib.request.urlopen('http://127.0.0.1:8003/api/', timeout=3)
-          except Exception as e:
-              sys.exit(1)
-      interval: 30s
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/api/', timeout=3)" ]
+      interval: 20s
       timeout: 5s
+      start_period: 30s
       retries: 3
     deploy:
       resources:
@@ -148,25 +140,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-# ═══════════════════════════════════════════════════════════════
-# NETWORKS — DIHAPUS (pakai default bridge)
-# ═══════════════════════════════════════════════════════════════
-# networks:
-#   lms-circlo-public:
-#     driver: bridge
-#     internal: false
-#   lms-circlo-internal:
-#     driver: bridge
-#     internal: true
-
-# ═══════════════════════════════════════════════════════════════
-# VOLUMES
-# ═══════════════════════════════════════════════════════════════
-volumes:
-  postgres_data:
-  nginx_cache:
-
     # ═══════════════════════════════════════════════════════════════
     # SECRETS
     # ═══════════════════════════════════════════════════════════════

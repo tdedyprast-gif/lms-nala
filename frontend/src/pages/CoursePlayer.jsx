@@ -90,6 +90,11 @@ export default function CoursePlayer() {
               </div>
               {active.pdf_url && <PdfFlipbook url={active.pdf_url} title={active.title} />}
 
+              {/* PDF Flipbook viewer */}
+              {active.pdf_url && (
+                <PdfFlipbook url={active.pdf_url} title={active.title} />
+              )}
+
               {active.has_assignment && (
                 <div className="mt-8 p-5 border border-[#F6D6C4] bg-[#FFF3EC] rounded-lg">
                   <div className="flex items-center gap-2">

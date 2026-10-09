@@ -1033,6 +1033,28 @@ async def upload_thumbnail(
 
     return {"url": f"/api/uploads/{filename}"}
 
+@api.post("/upload/pdf")
+async def upload_pdf(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    if user["role"] not in ("admin", "instructor"):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext != ".pdf":
+        raise HTTPException(status_code=400, detail="Format file harus PDF.")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10 MB limit for PDF
+        raise HTTPException(status_code=400, detail="Ukuran PDF maksimal 10 MB")
+
+    filename = f"{uuid.uuid4().hex}.pdf"
+    filepath = UPLOAD_DIR / filename
+    filepath.write_bytes(content)
+
+    return {"url": f"/api/uploads/{filename}"}
+
 
 MAX_PDF_SIZE = 10 * 1024 * 1024  # 10 MB
 
