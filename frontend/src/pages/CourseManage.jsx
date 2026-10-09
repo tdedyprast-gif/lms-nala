@@ -1,27 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Shell from '../components/Shell';
 import { useParams } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit3, FileText } from 'lucide-react';
+import PdfFlipbook from '../components/PdfFlipbook';
+
+const emptyForm = (order = 1) => ({
+  title: '', content: '', pdf_url: '', order, has_assignment: false,
+  assignment_title: '', assignment_description: '', max_score: 100,
+});
 
 export default function CourseManage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({
-    title: '', content: '', pdf_url: '', order: 1, has_assignment: false,
-    assignment_title: '', assignment_description: '', max_score: 100,
-  });
+  const [form, setForm] = useState(emptyForm());
   const [uploadingPdf, setUploadingPdf] = useState(false);
-  const pdfInputRef = React.useRef(null);
+  const pdfInputRef = useRef(null);
 
   const load = useCallback(
     () => api.get(`/courses/${id}`).then((r) => setCourse(r.data)),
     [id]
   );
-
   useEffect(() => { load(); }, [load]);
 
   const submit = async (e) => {
@@ -31,7 +33,7 @@ export default function CourseManage() {
       if (editing) await api.patch(`/modules/${editing}`, payload);
       else await api.post('/modules', payload);
       setShowForm(false); setEditing(null);
-      setForm({ title: '', content: '', pdf_url: '', order: 1, has_assignment: false, assignment_title: '', assignment_description: '', max_score: 100 });
+      setForm(emptyForm());
       toast.success('Tersimpan'); load();
     } catch (err) { toast.error(formatApiError(err)); }
   };
@@ -90,7 +92,7 @@ export default function CourseManage() {
           <h2 className="text-3xl font-semibold">{course.title}</h2>
           <p className="text-[#666] mt-1">{course.description}</p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditing(null); setForm({ title: '', content: '', pdf_url: '', order: (course.modules?.length || 0) + 1, has_assignment: false, assignment_title: '', assignment_description: '', max_score: 100 }); }}
+        <button onClick={() => { setShowForm(true); setEditing(null); setForm(emptyForm((course.modules?.length || 0) + 1)); }}
           className="btn btn-primary flex items-center gap-2" data-testid="new-module-btn">
           <Plus size={16} /> Materi Baru
         </button>
@@ -109,13 +111,13 @@ export default function CourseManage() {
             </div>
           </div>
           <div>
-            <label className="label">Konten / Materi (Teks atau URL lain)</label>
+            <label className="label">Konten / Materi</label>
             <textarea rows={5} className="input mt-1" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Isi teks materi atau link video/materi web…" />
           </div>
           <div>
             <label className="label">Upload PDF Materi (opsional)</label>
             <div className="flex items-center gap-3 mt-1">
-              <input type="file" accept="application/pdf" className="hidden" ref={pdfInputRef} onChange={handlePdfUpload} />
+              <input type="file" accept="application/pdf" className="hidden" ref={pdfInputRef} onChange={handlePdfUpload} data-testid="module-pdf-input" />
               <button type="button" onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf} className="btn btn-outline flex items-center gap-2">
                 {uploadingPdf ? 'Mengunggah...' : 'Pilih File PDF'}
               </button>
@@ -126,7 +128,7 @@ export default function CourseManage() {
                 </div>
               )}
             </div>
-            {form.pdf_url && <a href={form.pdf_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 mt-1 block w-max hover:underline">Lihat PDF</a>}
+            {form.pdf_url && <PdfFlipbook url={form.pdf_url} title={form.title || 'Pratinjau PDF'} />}
           </div>
 
           <label className="flex items-center gap-2">

@@ -5,8 +5,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /build
 
-# Copy package files dulu (layer cache)
+# Copy package files dulu (layer cache).
+# Skrip postinstall ikut disalin supaya worker PDF.js tersedia saat npm install.
 COPY package*.json ./
+COPY scripts/copy-pdf-worker.js ./scripts/copy-pdf-worker.js
 
 RUN npm install --legacy-peer-deps --no-audit --no-fund
 

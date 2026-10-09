@@ -86,8 +86,9 @@ export default function CoursePlayer() {
                 </button>
               </div>
               <div className="mt-6 whitespace-pre-wrap text-[#1A1A1A] leading-relaxed">
-                {active.content || <span className="text-[#666]">Belum ada konten teks. Silakan cek link/video yang diberikan instruktur.</span>}
+                {active.content || <span className="text-[#666]">Belum ada konten teks. Silakan cek PDF atau link yang diberikan instruktur.</span>}
               </div>
+              {active.pdf_url && <PdfFlipbook url={active.pdf_url} title={active.title} />}
 
               {/* PDF Flipbook viewer */}
               {active.pdf_url && (
@@ -158,7 +159,7 @@ export default function CoursePlayer() {
                     <p className="text-sm font-medium">{m.order}. {m.title}</p>
                     <div className="flex gap-1 flex-wrap mt-1">
                       {m.has_assignment && <span className="chip chip-accent">Tugas</span>}
-                      {m.pdf_url && <span className="chip" style={{background:'#E9F1EC',color:'#1A4D2E'}}><FileText size={10} className="mr-1" />PDF</span>}
+                      {m.pdf_url && <span className="chip" style={{ background: '#E9F1EC', color: '#1A4D2E' }}><FileText size={10} className="mr-1" />PDF</span>}
                     </div>
                   </div>
                 </button>
