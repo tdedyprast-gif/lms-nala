@@ -88,8 +88,6 @@ export default function CoursePlayer() {
               <div className="mt-6 whitespace-pre-wrap text-[#1A1A1A] leading-relaxed">
                 {active.content || <span className="text-[#666]">Belum ada konten teks. Silakan cek PDF atau link yang diberikan instruktur.</span>}
               </div>
-              {active.pdf_url && <PdfFlipbook url={active.pdf_url} title={active.title} />}
-
               {/* PDF Flipbook viewer */}
               {active.pdf_url && (
                 <PdfFlipbook url={active.pdf_url} title={active.title} />
